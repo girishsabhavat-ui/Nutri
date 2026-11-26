@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriPulse — Health &amp; Nutrition Awareness Survey Platform</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .fade-in {
+      animation: fadeIn 0.25s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideUp {
+      0% { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .slide-up {
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col antialiased">
+
+  <!-- ==================== MODULE 1A: 5-SECOND TASTEFUL COMEDY SPLASH ==================== -->
+  <div id="splash-screen" class="fixed inset-0 z-50 bg-slate-950 text-white flex items-center justify-center p-4 sm:p-6">
+    <div class="max-w-lg w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-9 shadow-2xl space-y-6 fade-in">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-teal-600 text-white flex items-center justify-center">
+            <i data-lucide="activity" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-sm font-bold tracking-tight text-white">NutriPulse</div>
+            <div class="text-[11px] text-slate-400">Clinical &amp; Behavioral Nutrition Survey</div>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-md bg-slate-800 text-teal-400 text-[11px] font-semibold border border-slate-700">
+          v2.4 Engineering Build
+        </span>
+      </div>
+
+      <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-5 space-y-2.5">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-400">
+          <i data-lucide="smile" class="w-4 h-4"></i>
+          <span>Pre-Survey Reality Check</span>
+        </div>
+        <p id="splash-joke-text" class="text-base sm:text-lg font-medium text-slate-100 leading-relaxed">
+          “Drinking iced coffee at 9 AM and calling it breakfast does not count as intermittent fasting — your digestive tract would like a word.”
+        </p>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs font-medium text-slate-400">
+          <span>Initializing Respondent Portal in <span id="splash-seconds" class="text-white font-bold">5</span>s</span>
+          <button id="skip-splash-btn" class="text-teal-400 hover:text-teal-300 font-semibold cursor-pointer">
+            Proceed to Login →
+          </button>
+        </div>
+        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <div id="splash-progress-bar" class="h-full bg-teal-500 rounded-full transition-all duration-100" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== HEADER ==================== -->
+  <header id="app-header" class="hidden bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-lg bg-teal-700 text-white flex items-center justify-center shrink-0">
+          <i data-lucide="activity" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-base font-bold tracking-tight text-slate-900 truncate">NutriPulse</h1>
+          <p id="header-user-badge" class="text-xs text-slate-500 truncate">Respondent Portal • Not Signed In</p>
+        </div>
+      </div>
+
+      <nav class="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-lg shrink-0" aria-label="Primary navigation">
+        <button id="tab-btn-survey" data-tab="survey" class="tab-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all bg-white text-teal-700 shadow-xs flex items-center gap-1.5">
+          <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i>
+          <span>Survey</span>
+        </button>
+        <button id="tab-btn-stats" data-tab="stats" class="tab-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+          <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+          <span>Analytics</span>
+        </button>
+        <button id="tab-btn-data" data-tab="data" class="tab-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+          <i data-lucide="database" class="w-3.5 h-3.5"></i>
+          <span>Audit Trail</span>
+        </button>
+        <button id="tab-btn-eng" data-tab="eng" class="tab-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+          <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+          <span>Engineering</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main id="app-main" class="hidden flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-6 pb-24 sm:py-8">
+
+    <!-- ==================== TAB 1: ONBOARDING, SURVEY & REPORT ==================== -->
+    <section id="view-survey" class="space-y-6 fade-in">
+
+      <!-- MODULE 1B: INSTITUTIONAL LOGIN & CONSENT -->
+      <div id="login-card" class="max-w-xl mx-auto bg-white rounded-xl border border-slate-200 shadow-xs p-6 sm:p-8 space-y-6">
+        <div class="border-b border-slate-100 pb-4 flex items-start justify-between gap-4">
+          <div class="space-y-1">
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-teal-700">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+              Module 1 • Respondent Authentication
+            </span>
+            <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Health &amp; Nutrition Awareness Survey</h2>
+            <p class="text-xs sm:text-sm text-slate-500">12 evidence-based items across 4 domains, with post-answer humor and instant scoring.</p>
+          </div>
+        </div>
+
+        <form id="login-form" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="login-name" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                Full Name *
+              </label>
+              <input id="login-name" type="text" required placeholder="e.g., Aarav Sharma" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600" />
+            </div>
+            <div>
+              <label for="login-id" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                Student / Staff ID (Optional)
+              </label>
+              <input id="login-id" type="text" placeholder="e.g., ENG-2026-042" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="login-role" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                Cohort / Role
+              </label>
+              <select id="login-role" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600">
+                <option value="Student">Student</option>
+                <option value="Faculty">Faculty / Instructor</option>
+                <option value="Researcher">Researcher</option>
+                <option value="Professional">Working Professional</option>
+              </select>
+            </div>
+            <div>
+              <label for="age-group-select" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                Age Bracket
+              </label>
+              <select id="age-group-select" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600">
+                <option value="18-24" selected>18–24 years</option>
+                <option value="25-34">25–34 years</option>
+                <option value="35-44">35–44 years</option>
+                <option value="45+">45+ years</option>
+              </select>
+            </div>
+          </div>
+
+          <label class="flex items-start gap-3 p-3.5 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer">
+            <input id="consent-checkbox" type="checkbox" checked class="mt-0.5 w-4 h-4 text-teal-700 rounded border-slate-300 focus:ring-teal-600" />
+            <span class="text-xs text-slate-600 leading-relaxed">
+              <strong class="text-slate-800">Informed Consent:</strong> I consent to storing my anonymized survey responses locally for live cohort analytics and CSV/JSON export.
+            </span>
+          </label>
+
+          <button type="submit" class="w-full px-5 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-xs">
+            <span>Begin Assessment</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </form>
+
+        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+          <span>Guidelines: WHO • FDA • ICMR-NIN • National Academies</span>
+          <button id="replay-splash-btn" type="button" class="text-teal-700 hover:underline font-semibold">
+            Replay Intro
+          </button>
+        </div>
+      </div>
+
+      <!-- MODULE 2 & 3: QUESTION ENGINE + POST-ANSWER JOKE & SCIENCE -->
+      <div id="survey-question-card" class="hidden max-w-3xl mx-auto bg-white rounded-xl border border-slate-200 shadow-xs p-5 sm:p-8 space-y-6">
+        <!-- Domain & Progress Rail -->
+        <div class="space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2">
+              <span id="q-counter" class="px-2.5 py-0.5 rounded-md bg-teal-50 text-teal-800 font-bold border border-teal-200">Item 1 / 12</span>
+              <span id="q-category" class="font-semibold text-slate-600 uppercase tracking-wider">Domain 1: Dietary Intake &amp; Fiber</span>
+            </div>
+            <button id="logout-btn" type="button" class="text-xs text-slate-400 hover:text-rose-600 font-medium">Sign Out</button>
+          </div>
+          <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div id="q-progress-bar" class="h-full bg-teal-600 rounded-full transition-all duration-300" style="width: 8.33%"></div>
+          </div>
+        </div>
+
+        <!-- Question Prompt -->
+        <div class="space-y-1.5">
+          <h3 id="q-title" class="text-lg sm:text-xl font-bold text-slate-900 leading-snug"></h3>
+          <p id="q-subtitle" class="text-xs sm:text-sm text-slate-500"></p>
+        </div>
+
+        <!-- Multiple-Choice Options -->
+        <div id="q-options" class="grid grid-cols-1 gap-2.5"></div>
+
+        <!-- Post-Answer Feedback Layer (ONLY shown AFTER user selects an answer) -->
+        <div id="q-feedback-panel" class="hidden space-y-3 pt-2 slide-up">
+          <div id="q-roast-box" class="rounded-lg p-4 border flex items-start gap-3">
+            <div id="q-roast-emoji" class="text-xl shrink-0 leading-none mt-0.5"></div>
+            <div class="space-y-1">
+              <div class="text-[11px] font-bold uppercase tracking-wider opacity-80">Post-Answer Commentary</div>
+              <p id="q-roast-text" class="text-sm font-medium leading-relaxed"></p>
+            </div>
+          </div>
+
+          <div class="rounded-lg p-4 bg-slate-50 border border-slate-200 space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-teal-700">
+                <i data-lucide="book-open-check" class="w-3.5 h-3.5"></i>
+                Evidence-Based Standard
+              </span>
+              <a id="q-science-link" href="#" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-teal-700 hover:text-teal-800 underline inline-flex items-center gap-1">
+                <span id="q-science-source">Source</span>
+                <i data-lucide="external-link" class="w-3 h-3"></i>
+              </a>
+            </div>
+            <p id="q-science-text" class="text-xs sm:text-sm text-slate-700 leading-relaxed"></p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+          <button id="prev-q-btn" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs sm:text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Previous</span>
+          </button>
+          <button id="next-q-btn" disabled class="px-5 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5">
+            <span id="next-q-label">Next Item</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- MODULE 4: SCORING & CLASSIFICATION REPORT -->
+      <div id="survey-result-card" class="hidden max-w-3xl mx-auto space-y-6 fade-in">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="bg-slate-900 text-white p-6 sm:p-8 border-b border-slate-800">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+              <div class="space-y-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span id="result-audit-id" class="px-2 py-0.5 rounded bg-slate-800 text-teal-400 font-mono text-[11px] border border-slate-700">AUDIT-0000</span>
+                  <span id="result-user-greeting" class="text-xs font-semibold text-slate-300">Assessment Complete</span>
+                </div>
+                <h2 id="result-persona-title" class="text-2xl sm:text-3xl font-bold tracking-tight"></h2>
+                <p id="result-persona-roast" class="text-slate-300 text-sm leading-relaxed max-w-xl"></p>
+              </div>
+              <div class="flex sm:flex-col items-center justify-between sm:justify-center bg-slate-800/80 rounded-xl p-4 sm:px-6 shrink-0 border border-slate-700">
+                <span id="result-persona-emoji" class="text-3xl sm:text-4xl mb-0 sm:mb-1"></span>
+                <div class="text-right sm:text-center">
+                  <div id="result-score-pct" class="text-2xl sm:text-3xl font-extrabold text-teal-400"></div>
+                  <div class="text-[11px] text-slate-400 font-medium">Composite Score</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6 sm:p-8 space-y-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-950">
+              <div class="flex items-center gap-2.5">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-teal-700 shrink-0"></i>
+                <p id="result-benchmark-text" class="text-xs sm:text-sm font-medium"></p>
+              </div>
+              <button id="go-to-stats-from-result" class="text-xs font-bold text-teal-800 hover:underline shrink-0">
+                Open Analytics →
+              </button>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Domain Sub-Score Breakdown</h3>
+              <div id="result-categories" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            </div>
+
+            <div class="bg-slate-50 rounded-lg border border-slate-200 p-4 sm:p-5 space-y-2.5">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-700"></i>
+                <span>Evidence-Based Recommendations</span>
+              </h3>
+              <ul id="result-tips" class="space-y-2 text-xs sm:text-sm text-slate-700"></ul>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+              <div class="flex flex-wrap items-center gap-2.5">
+                <button id="copy-result-btn" class="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold flex items-center gap-2">
+                  <i data-lucide="copy" class="w-4 h-4"></i>
+                  <span>Copy Summary Report</span>
+                </button>
+                <button id="retake-survey-btn" class="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold flex items-center gap-2">
+                  <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                  <span>New Respondent</span>
+                </button>
+              </div>
+              <span id="storage-status-badge" class="text-xs font-medium text-teal-700 flex items-center gap-1.5">
+                <i data-lucide="database" class="w-3.5 h-3.5"></i>
+                <span>Persisted to Audit Trail</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: ANALYTICS DASHBOARD ==================== -->
+    <section id="view-stats" class="hidden space-y-6 fade-in">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Cohort Analytics Dashboard</h2>
+          <p class="text-xs sm:text-sm text-slate-500">Live aggregation across <span id="stats-sample-note" class="font-semibold text-slate-700"></span> records.</p>
+        </div>
+        <button id="stats-take-survey-btn" class="self-start sm:self-auto px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold flex items-center gap-1.5">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>New Submission</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Records</div>
+          <div id="kpi-total" class="text-2xl font-extrabold text-slate-900 mt-1">0</div>
+          <div id="kpi-user-count" class="text-xs text-teal-700 font-medium mt-1">0 logged-in</div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Mean Score</div>
+          <div id="kpi-avg-score" class="text-2xl font-extrabold text-teal-700 mt-1">0%</div>
+          <div class="text-xs text-slate-500 mt-1">120-point scale</div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Modal Persona</div>
+          <div id="kpi-top-persona" class="text-sm sm:text-base font-bold text-slate-900 mt-1.5 leading-tight">—</div>
+          <div id="kpi-top-persona-pct" class="text-xs text-slate-500 mt-1">—</div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">WHO 5-a-Day Rate</div>
+          <div id="kpi-produce-pct" class="text-2xl font-extrabold text-amber-600 mt-1">0%</div>
+          <div class="text-xs text-slate-500 mt-1">400g+ daily produce</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <h3 class="text-sm font-bold text-slate-900 mb-1">Persona Classification Distribution</h3>
+          <p class="text-xs text-slate-500 mb-4">Share of respondents across 5 behavioral profiles</p>
+          <div class="relative h-72">
+            <canvas id="chart-personas"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <h3 class="text-sm font-bold text-slate-900 mb-1">Mean Mastery by Nutrition Domain</h3>
+          <p class="text-xs text-slate-500 mb-4">Cohort strengths vs. awareness gaps (%)</p>
+          <div class="relative h-72">
+            <canvas id="chart-categories"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <h3 class="text-sm font-bold text-slate-900 mb-1">Score Bracket Histogram</h3>
+        <p class="text-xs text-slate-500 mb-4">Respondent distribution across 0–100% score bands</p>
+        <div class="relative h-72">
+          <canvas id="chart-distribution"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: AUDIT TRAIL & QUESTION BANK ==================== -->
+    <section id="view-data" class="hidden space-y-6 fade-in">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900">Audit Trail &amp; Stored Records</h2>
+            <p class="text-xs sm:text-sm text-slate-500">Filter respondent records, export CSV/JSON datasets, or clear local entries.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="export-csv-btn" class="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Export CSV</span>
+            </button>
+            <button id="export-json-btn" class="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+              <i data-lucide="file-json" class="w-3.5 h-3.5"></i>
+              <span>Export JSON</span>
+            </button>
+            <button id="clear-user-data-btn" class="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-xs font-semibold text-rose-700 flex items-center gap-1.5">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <span>Clear Local Entries</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <select id="filter-persona-select" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600">
+            <option value="all">All Personas</option>
+          </select>
+          <select id="filter-source-select" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600">
+            <option value="all">All Records (Logged-In + Baseline)</option>
+            <option value="user">Logged-In Respondents Only</option>
+            <option value="sample">Baseline Cohort Only</option>
+          </select>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-200 rounded-lg">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                <th class="py-2.5 px-4">Audit ID / Time</th>
+                <th class="py-2.5 px-4">Respondent</th>
+                <th class="py-2.5 px-4">Age</th>
+                <th class="py-2.5 px-4">Score</th>
+                <th class="py-2.5 px-4">Classification</th>
+              </tr>
+            </thead>
+            <tbody id="responses-table-body" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-4">
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-slate-900">12-Item Instrument &amp; Reaction Bank</h2>
+          <p class="text-xs sm:text-sm text-slate-500">Complete survey instrument with post-answer jokes and WHO/FDA/ICMR-NIN citations.</p>
+        </div>
+        <div id="question-bank-list" class="space-y-4"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: ENGINEERING ARCHITECTURE ==================== -->
+    <section id="view-eng" class="hidden space-y-6 fade-in">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-6 space-y-5">
+        <div>
+          <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-teal-700">
+            <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+            System Engineering &amp; Modular Design
+          </span>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">6-Module Survey Application Architecture</h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <div class="text-xs font-bold text-teal-700">1. Onboarding &amp; Auth FSM</div>
+            <p class="text-xs text-slate-600 leading-relaxed">5s timed splash (<code class="bg-slate-200 px-1 rounded">setInterval</code>) transitions to institutional login with required Name + Consent gate.</p>
+          </div>
+          <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <div class="text-xs font-bold text-teal-700">2. Question &amp; Logic Engine</div>
+            <p class="text-xs text-slate-600 leading-relaxed">4-domain state machine tracks completion, enforces answer validation, and prevents forward-skipping.</p>
+          </div>
+          <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <div class="text-xs font-bold text-teal-700">3. Instant Feedback Layer</div>
+            <p class="text-xs text-slate-600 leading-relaxed">Conditional DOM reveal keeps jokes hidden until selection, preventing response bias.</p>
+          </div>
+          <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <div class="text-xs font-bold text-teal-700">4. Weighted Scoring Engine</div>
+            <p class="text-xs text-slate-600 leading-relaxed">Computes 120-point composite score, 4 domain sub-scores, and maps thresholds to 5 personas.</p>
+          </div>
+          <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <div class="text-xs font-bold text-teal-700">5. Audit Trail Persistence</div>
+            <p class="text-xs text-slate-600 leading-relaxed">Fault-tolerant <code class="bg-slate-200 px-1 rounded">localStorage</code> JSON store with unique Audit IDs and in-memory fallback.</p>
+          </div>
+          <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <div class="text-xs font-bold text-teal-700">6. Analytics &amp; Export</div>
+            <p class="text-xs text-slate-600 leading-relaxed">Real-time Chart.js aggregation + RFC 4180 CSV and JSON Blob exporters.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-6 space-y-3">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="braces" class="w-4 h-4 text-teal-700"></i>
+            Audit Record JSON Schema
+          </h3>
+          <pre class="text-xs bg-slate-950 text-teal-300 p-4 rounded-lg overflow-x-auto leading-relaxed">{
+  "id": "AUD-4821",
+  "userName": "Aarav Sharma",
+  "staffId": "ENG-2026-042",
+  "role": "Student",
+  "ageGroup": "18-24",
+  "timestamp": "2026-11-26T09:33:00Z",
+  "score": 94,
+  "maxScore": 120,
+  "pct": 78,
+  "personaId": "intentionalist",
+  "domainScores": {
+    "Dietary Intake & Fiber": 83,
+    "Hydration & Sugars": 75,
+    "Stimulants & Protein": 80,
+    "Fats & Label Literacy": 75
+  }
+}</pre>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-6 space-y-3">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="server" class="w-4 h-4 text-teal-700"></i>
+            Production Backend Upgrade Path
+          </h3>
+          <ul class="space-y-2.5 text-xs sm:text-sm text-slate-700">
+            <li class="flex items-start gap-2"><span class="font-bold text-teal-700">• API Layer:</span> Replace <code class="bg-slate-100 px-1 rounded">saveUserEntries()</code> with <code class="bg-slate-100 px-1 rounded">POST /api/v1/responses</code>.</li>
+            <li class="flex items-start gap-2"><span class="font-bold text-teal-700">• Database:</span> PostgreSQL with <code class="bg-slate-100 px-1 rounded">respondents</code>, <code class="bg-slate-100 px-1 rounded">submissions</code>, and <code class="bg-slate-100 px-1 rounded">jsonb</code> domain scores.</li>
+            <li class="flex items-start gap-2"><span class="font-bold text-teal-700">• Auth &amp; Security:</span> JWT / OAuth2 institutional SSO + server-side Zod/Pydantic validation.</li>
+            <li class="flex items-start gap-2"><span class="font-bold text-teal-700">• Complexity:</span> Client-side scoring and chart aggregation run in <code class="bg-slate-100 px-1 rounded">O(N)</code> linear time.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav id="mobile-bottom-nav" class="hidden sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-slate-200 px-2 py-1.5 flex items-center justify-around shadow-lg" aria-label="Mobile app navigation">
+    <button data-tab="survey" class="mobile-tab-btn flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-teal-700 font-semibold text-[11px]">
+      <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+      <span>Survey</span>
+    </button>
+    <button data-tab="stats" class="mobile-tab-btn flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-slate-500 font-medium text-[11px]">
+      <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+      <span>Analytics</span>
+    </button>
+    <button data-tab="data" class="mobile-tab-btn flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-slate-500 font-medium text-[11px]">
+      <i data-lucide="database" class="w-5 h-5"></i>
+      <span>Audit</span>
+    </button>
+    <button data-tab="eng" class="mobile-tab-btn flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-slate-500 font-medium text-[11px]">
+      <i data-lucide="cpu" class="w-5 h-5"></i>
+      <span>Arch</span>
+    </button>
+  </nav>
+
+  <!-- In-Page Confirmation Modal -->
+  <div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Clear local respondent records?</h3>
+          <p class="text-sm text-slate-600 mt-1">This removes your locally saved submissions while preserving the baseline cohort dataset.</p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2.5 pt-2">
+        <button id="modal-cancel-btn" class="px-4 py-2 rounded-lg border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+        <button id="modal-confirm-btn" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold">Yes, Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden fixed bottom-20 sm:bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-lg shadow-lg text-xs sm:text-sm font-medium flex items-center gap-2 fade-in">
+    <i data-lucide="check-circle" class="w-4 h-4 text-teal-400"></i>
+    <span id="toast-message"></span>
+  </div>
+
+  <script>
+    const SPLASH_JOKES = [
+      '“Drinking iced coffee at 9 AM and calling it breakfast does not count as intermittent fasting — your digestive tract would like a word.”',
+      '“Buying spinach every Sunday with noble intentions and throwing it away on Thursday is technically cardio for your conscience.”',
+      '“Your body is 60% water, which means some of us are basically walking around as slightly anxious houseplants.”'
+    ];
+
+    const QUESTIONS = [
+      {
+        id: 'q1',
+        category: 'Dietary Intake & Fiber',
+        title: 'How many portions of fruits and vegetables do you consume on a typical day?',
+        subtitle: 'Standardize 1 portion to roughly 80 g (one medium fruit or a cupped handful of vegetables).',
+        science: 'WHO recommends at least 400 g (5 portions) of fruits and vegetables per day for anyone over age 10 to reduce chronic disease risk.',
+        sourceName: 'WHO Healthy Diet',
+        sourceUrl: 'https://www.who.int/news-room/fact-sheets/detail/healthy-diet',
+        options: [
+          { label: '5+ portions (400 g+) daily', points: 10, emoji: '🥗', tone: 'good', roast: 'Look at you, casually flexing on everyone else’s beige diet. Your gut bacteria just sent a thank-you note.' },
+          { label: '3–4 portions daily', points: 7, emoji: '🍌', tone: 'mid', roast: 'Respectable! You are one handful of spinach away from making a dietitian tear up with pride.' },
+          { label: '1–2 portions daily', points: 4, emoji: '🍎', tone: 'warn', roast: 'Ah yes, the 4 PM emotional-support apple. Good start, though your colon would love a backup dancer.' },
+          { label: '0 portions (mostly refined/processed foods)', points: 1, emoji: '🍟', tone: 'bad', roast: 'Bold strategy. Your digestive tract is currently drafting a formal HR complaint.' }
+        ]
+      },
+      {
+        id: 'q2',
+        category: 'Dietary Intake & Fiber',
+        title: 'What is your estimated daily dietary fiber intake (lentils, beans, oats, vegetables, nuts)?',
+        subtitle: 'Consider both whole grains and legumes across your main meals.',
+        science: 'ICMR-NIN (2024) recommends 25–30 g/day of dietary fiber, and WHO recommends at least 25 g/day of naturally occurring fiber.',
+        sourceName: 'ICMR-NIN 2024',
+        sourceUrl: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC12735365/',
+        options: [
+          { label: '25–30+ g/day (dal, veggies, whole grains & seeds)', points: 10, emoji: '🫘', tone: 'good', roast: 'Fiber royalty! Your gut microbiome is throwing a five-star conference in your honor.' },
+          { label: '15–20 g/day (some oats or legumes most days)', points: 7, emoji: '🥣', tone: 'mid', roast: 'Ahead of most adults—tossing a spoonful of chia or extra veggies gets you right to the target.' },
+          { label: 'Under 10 g/day (mostly refined bread/white rice)', points: 3, emoji: '🍞', tone: 'warn', roast: 'Your digestive system is working twice as hard for half the payoff. Time to invite lentils to the meeting.' },
+          { label: 'I thought fiber only meant fiber-optic Wi-Fi', points: 1, emoji: '📡', tone: 'bad', roast: 'Wrong bandwidth, friend. Fast internet won’t help your gut transit time.' }
+        ]
+      },
+      {
+        id: 'q3',
+        category: 'Dietary Intake & Fiber',
+        title: 'What share of your daily grain intake comes from whole grains (whole wheat, oats, millets, brown rice)?',
+        subtitle: 'Compare whole-grain staples against refined flour (maida) and polished white rice.',
+        science: 'ICMR-NIN (2024) specifically recommends obtaining at least 50% of cereal/grain intake from whole grains.',
+        sourceName: 'ICMR-NIN 2024',
+        sourceUrl: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC12735365/',
+        options: [
+          { label: '50% or more whole grains', points: 10, emoji: '🌾', tone: 'good', roast: 'Textbook execution! Steady blood glucose and zero 3 PM keyboard-napping.' },
+          { label: '25–40% whole grains', points: 7, emoji: '🫓', tone: 'mid', roast: 'Solid effort—swapping just one refined meal a day for millets or whole wheat hits the 50% mark.' },
+          { label: 'Mostly refined grains', points: 3, emoji: '🥐', tone: 'warn', roast: 'Delicious? Yes. Stripped of bran and micronutrients? Also yes.' },
+          { label: 'Do chocolate-chip cookies count as a grain?', points: 1, emoji: '🍪', tone: 'bad', roast: 'Only if your nutritionist is three raccoons in a lab coat.' }
+        ]
+      },
+      {
+        id: 'q4',
+        category: 'Hydration & Sugars',
+        title: 'How much total water and unsweetened fluid do you consume daily?',
+        subtitle: 'Remember that roughly 20% of total water intake comes from water-rich foods.',
+        science: 'The National Academies recommends ~2.7 L/day total water for women and ~3.7 L/day for men from beverages and food.',
+        sourceName: 'National Academies',
+        sourceUrl: 'https://www.nationalacademies.org/news/report-sets-dietary-intake-levels-for-water-salt-and-potassium-to-maintain-health-and-reduce-chronic-disease-risk',
+        options: [
+          { label: '2.5+ liters of water/fluids daily', points: 10, emoji: '💧', tone: 'good', roast: 'Peak hydration! You probably know the exact location of every water cooler on campus.' },
+          { label: '1.5–2.4 liters daily', points: 7, emoji: '🚰', tone: 'mid', roast: 'You hydrate like a sensible houseplant—watered mainly when the leaves start drooping.' },
+          { label: 'Around 3–4 glasses daily', points: 4, emoji: '🧊', tone: 'warn', roast: 'Running on mist and optimism. Go drink a glass of water right now, we’ll wait.' },
+          { label: 'Mostly coffee/soda; almost no plain water', points: 1, emoji: '🏜️', tone: 'bad', roast: 'Congratulations, you have achieved the hydration profile of a Victorian-era raisin.' }
+        ]
+      },
+      {
+        id: 'q5',
+        category: 'Hydration & Sugars',
+        title: 'How much free or added sugar do you consume daily (sodas, sweets, sweetened tea/coffee)?',
+        subtitle: '1 teaspoon of sugar is roughly 4 grams.',
+        science: 'WHO recommends limiting free sugars to <10% of daily energy (~50 g or 12 tsp), and ideally <5% (~25 g or 6 tsp).',
+        sourceName: 'WHO Europe',
+        sourceUrl: 'https://www.who.int/europe/news-room/fact-sheets/item/nutrition---maintaining-a-healthy-lifestyle',
+        options: [
+          { label: 'Under 25 g (<6 tsp) daily', points: 10, emoji: '🛡️', tone: 'good', roast: 'Iron discipline. You walk past the bakery display and only admire the architecture.' },
+          { label: '25–50 g (6–12 tsp) daily', points: 7, emoji: '🍪', tone: 'mid', roast: 'Balanced and human! You enjoy life without turning your pancreas into an overtime factory.' },
+          { label: '50–80 g daily', points: 4, emoji: '🧋', tone: 'warn', roast: 'Your afternoon energy crash is not a personality trait—it is a blood-sugar roller coaster.' },
+          { label: '80+ g daily', points: 1, emoji: '🍩', tone: 'bad', roast: 'At this point, mosquitoes probably get a sugar rush just by landing near you.' }
+        ]
+      },
+      {
+        id: 'q6',
+        category: 'Hydration & Sugars',
+        title: 'Knowledge check: Do organic honey, maple syrup, and 100% fruit juice count toward your daily free-sugar limit?',
+        subtitle: 'Evaluate how the body metabolizes "natural" liquid or concentrated sweeteners.',
+        science: 'Yes. WHO explicitly classifies sugars in honey, syrups, and fruit juices as free sugars that should be limited.',
+        sourceName: 'WHO Healthy Diet',
+        sourceUrl: 'https://www.who.int/news-room/fact-sheets/detail/healthy-diet',
+        options: [
+          { label: 'Yes — all three count as free sugars', points: 10, emoji: '🧠', tone: 'good', roast: 'Spot on! You cannot fool your metabolism just because the sweetener came in a rustic mason jar.' },
+          { label: 'Only fruit juice counts; honey is different', points: 5, emoji: '🍯', tone: 'mid', roast: 'Classic trap! Honey has trace minerals, sure, but to your bloodstream it is still sugar in a fancy suit.' },
+          { label: 'No — natural sweeteners are exempt', points: 2, emoji: '💸', tone: 'warn', roast: 'Your wallet is lighter, your tea is sweeter, and your pancreas is completely unimpressed.' },
+          { label: 'Unsure — I just trust "No Added Sugar" labels', points: 2, emoji: '🧃', tone: 'bad', roast: 'Marketing got you! Even 100% juice packs free sugars without the fiber brakes.' }
+        ]
+      },
+      {
+        id: 'q7',
+        category: 'Hydration & Sugars',
+        title: 'How closely do you stay under the recommended daily salt limit?',
+        subtitle: 'Account for packaged snacks, pickles, instant noodles, and restaurant sauces.',
+        science: 'WHO recommends limiting total salt intake to less than 5 g/day (~1 teaspoon) and using iodized salt.',
+        sourceName: 'WHO Europe',
+        sourceUrl: 'https://www.who.int/europe/news-room/fact-sheets/item/nutrition---maintaining-a-healthy-lifestyle',
+        options: [
+          { label: 'Low (<5 g/day) — mostly fresh cooking with herbs/spices', points: 10, emoji: '🌿', tone: 'good', roast: 'Chef energy! Your blood pressure is so calm it could teach meditation classes.' },
+          { label: 'Moderate — rarely add table salt, occasional takeout', points: 7, emoji: '🍲', tone: 'mid', roast: 'Reasonable! Just watch restaurant sauces—they pack a sneaky sodium wallop.' },
+          { label: 'High — regular chips, pickles, or instant noodles', points: 4, emoji: '🍜', tone: 'warn', roast: 'One packet of instant noodles can eat up half your daily salt budget before you even add chili oil.' },
+          { label: 'I salt my food before even tasting it', points: 1, emoji: '🧂', tone: 'bad', roast: 'Pure chaos. Your taste buds are basically expecting the Dead Sea on every forkful.' }
+        ]
+      },
+      {
+        id: 'q8',
+        category: 'Stimulants & Protein',
+        title: 'What is your typical weekday caffeine intake (coffee, tea, energy drinks, colas)?',
+        subtitle: 'One 12-oz brewed coffee averages ~140–180 mg of caffeine.',
+        science: 'The FDA cites up to 400 mg/day of caffeine as generally not associated with negative effects for most healthy adults.',
+        sourceName: 'FDA Consumer Update',
+        sourceUrl: 'https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much',
+        options: [
+          { label: '0–200 mg (0–2 cups)', points: 10, emoji: '🍵', tone: 'good', roast: 'Zen energy! You actually wake up using your own circadian rhythm instead of battery acid.' },
+          { label: '200–400 mg (2–3 cups, within FDA cap)', points: 8, emoji: '☕', tone: 'mid', roast: 'Right in the sweet spot! Productive, alert, and not yet vibrating through solid walls.' },
+          { label: '400–600 mg (4+ cups or energy drinks)', points: 4, emoji: '⚡', tone: 'warn', roast: 'You can probably hear colors by 2 PM. Try swapping the afternoon cup for water or decaf.' },
+          { label: '600+ mg (caffeine is my primary food group)', points: 1, emoji: '🚀', tone: 'bad', roast: 'Your heart rate has its own zip code. Please step away from the cold brew.' }
+        ]
+      },
+      {
+        id: 'q9',
+        category: 'Stimulants & Protein',
+        title: 'How consistently do you include a dedicated protein source in every main meal?',
+        subtitle: 'Examples: eggs, dal/legumes, paneer/tofu, fish, poultry, Greek yogurt, or nuts.',
+        science: 'ICMR-NIN sets the adult protein RDA at 0.83 g/kg/day (and 1.0 g/kg/day for predominantly cereal-based diets).',
+        sourceName: 'ICMR-NIN RDA',
+        sourceUrl: 'https://www.nin.res.in/rdabook/brief_note.pdf',
+        options: [
+          { label: 'Every meal (breakfast, lunch, and dinner)', points: 10, emoji: '🥚', tone: 'good', roast: 'Gains and brains! Steady satiety means you aren’t raiding the snack drawer at 11 AM.' },
+          { label: 'Most meals (dinner is strong; breakfast is light)', points: 7, emoji: '🥜', tone: 'mid', roast: 'Very common! Adding eggs, curd, or nut butter to breakfast fixes the mid-morning slump.' },
+          { label: 'Mostly carb-dominant meals', points: 3, emoji: '🍝', tone: 'warn', roast: 'Carbs are great fuel, but without protein you’re hungry again before the dishes are washed.' },
+          { label: 'Does the peanut inside a chocolate bar count?', points: 1, emoji: '🍫', tone: 'bad', roast: 'Technically there is one peanut in there, doing the heavy lifting of an Olympic weightlifter.' }
+        ]
+      },
+      {
+        id: 'q10',
+        category: 'Stimulants & Protein',
+        title: 'How often do you consume whole fruit instead of packaged fruit juice?',
+        subtitle: 'Whole fruit retains intact dietary fiber that slows sugar absorption.',
+        science: 'WHO advises limiting fruit juices due to high free-sugar content and prioritizing whole, fresh fruits.',
+        sourceName: 'WHO Healthy Diet',
+        sourceUrl: 'https://www.who.int/news-room/fact-sheets/detail/healthy-diet',
+        options: [
+          { label: 'Almost always whole fruit', points: 10, emoji: '🍊', tone: 'good', roast: 'Chewing your fruit like a responsible mammal! Fiber slows sugar absorption like a champ.' },
+          { label: 'Mix of whole fruit and occasional fresh juice', points: 7, emoji: '🥝', tone: 'mid', roast: 'Solid middle ground—just remember one glass of juice packs the sugar of 3–4 oranges.' },
+          { label: 'Mostly packaged 100% juice', points: 3, emoji: '🧃', tone: 'warn', roast: 'Liquid sugar in disguise! Keep the fruit, skip the carton.' },
+          { label: 'Fruit-flavored candy is my primary fruit', points: 1, emoji: '🍬', tone: 'bad', roast: 'Only in the same universe where gummy bears count as wildlife conservation.' }
+        ]
+      },
+      {
+        id: 'q11',
+        category: 'Fats & Label Literacy',
+        title: 'Which fat profile best describes your everyday cooking and snacking?',
+        subtitle: 'Compare plant oils, nuts, and fish against butter, ghee, and deep-fried foods.',
+        science: 'WHO recommends total fat <30%, saturated fat <10%, and trans fat <1% of energy, favoring unsaturated plant oils, nuts, and fish.',
+        sourceName: 'WHO Europe',
+        sourceUrl: 'https://www.who.int/europe/news-room/fact-sheets/item/nutrition---maintaining-a-healthy-lifestyle',
+        options: [
+          { label: 'Primarily unsaturated plant oils, nuts, seeds & fish', points: 10, emoji: '🥑', tone: 'good', roast: 'Cardiologist’s dream! Your arteries just gave you a standing ovation.' },
+          { label: 'Balanced home-cooked oils with occasional fried treats', points: 7, emoji: '🍳', tone: 'mid', roast: 'Realistic and sustainable! Enjoying weekend samosas while keeping weekdays clean works great.' },
+          { label: 'Heavy on butter, cream, or frequent fried takeout', points: 4, emoji: '🧈', tone: 'warn', roast: 'Delicious? Undeniably. Ideal for keeping saturated fat under 10%? Not quite.' },
+          { label: 'If it isn’t deep-fried twice, I don’t trust it', points: 1, emoji: '🍗', tone: 'bad', roast: 'Your air fryer is crying in the corner because you refuse to let it help you.' }
+        ]
+      },
+      {
+        id: 'q12',
+        category: 'Fats & Label Literacy',
+        title: 'True or False: Plain frozen vegetables and canned beans are nutritionally inferior to fresh produce.',
+        subtitle: 'Consider nutrient preservation and added sodium/sugar on nutrition labels.',
+        science: 'False. WHO confirms frozen and canned fruits and vegetables are healthy choices provided they have no added sugars or excess sodium.',
+        sourceName: 'WHO Healthy Diet',
+        sourceUrl: 'https://www.who.int/news-room/fact-sheets/detail/healthy-diet',
+        options: [
+          { label: 'False — plain frozen/canned produce is highly nutritious', points: 10, emoji: '🫛', tone: 'good', roast: 'Correct! Flash-frozen peas often retain more vitamins than "fresh" ones sitting in transit for a week.' },
+          { label: 'Mostly false — I check labels for added salt or syrup', points: 9, emoji: '🏷️', tone: 'good', roast: 'Pro-level label literacy! You dodge hidden sodium while saving prep time.' },
+          { label: 'True — I assumed freezing destroys all vitamins', points: 4, emoji: '❄️', tone: 'warn', roast: 'Good news: you can stop feeling guilty about that bag of frozen broccoli in your freezer!' },
+          { label: 'Wait, vegetables come in bags that aren’t potato chips?', points: 1, emoji: '🛍️', tone: 'bad', roast: 'Yes! Visit the freezer aisle sometime—it’s a vegetable museum that doesn’t spoil in 3 days.' }
+        ]
+      }
+    ];
+
+    const PERSONAS = [
+      {
+        id: 'overachiever',
+        minPct: 85,
+        title: 'The Hydration & Fiber Overachiever',
+        emoji: '🥦',
+        roast: 'You read nutrition labels for sport, own a 1-liter bottle with time markings, and your gut microbiome has a better credit score than most people.',
+        tips: [
+          'Maintain your 5-a-day produce habit while keeping meals flexible and enjoyable.',
+          'Verify protein distribution (~0.83–1.0 g/kg/day) across breakfast as well as dinner.',
+          'Share one 10-minute high-fiber recipe with a peer who still thinks ketchup is a vegetable.'
+        ]
+      },
+      {
+        id: 'intentionalist',
+        minPct: 65,
+        title: 'The Salad-Intentionalist',
+        emoji: '🥗',
+        roast: 'You buy spinach every Sunday with noble intentions. Half becomes heroic bowls; the other half quietly becomes compost by Thursday—and you’re still outperforming most adults!',
+        tips: [
+          'Swap one refined-grain meal per day for whole wheat, oats, or millets to hit the ICMR-NIN 50% target.',
+          'Stock plain frozen vegetables to prevent busy weeknights from turning into instant-noodle emergencies.',
+          'Watch hidden free sugars in honey, syrups, and packaged fruit juices.'
+        ]
+      },
+      {
+        id: 'coffee_strategist',
+        minPct: 45,
+        title: 'The Iced-Coffee-Is-A-Meal Strategist',
+        emoji: '🧋',
+        roast: 'Strong opinions on caffeine, decent intentions about vegetables, and a close relationship with afternoon snacks. You’re one glass of water and a handful of nuts away from thriving.',
+        tips: [
+          'Pair morning caffeine with protein (eggs, yogurt, or dal chilla) to prevent 11 AM energy crashes.',
+          'Keep caffeine under 400 mg/day and follow every cup with a full glass of water.',
+          'Add 2–3 fist-sized portions of produce before dinner so fiber isn’t an afterthought.'
+        ]
+      },
+      {
+        id: 'maggi_philosopher',
+        minPct: 25,
+        title: 'The Midnight Maggi Philosopher',
+        emoji: '🍜',
+        roast: 'Your culinary motto is "if it boils in 2 minutes, it’s gourmet." Your taste buds live in luxury while your fiber and hydration metrics send SOS flares.',
+        tips: [
+          'Upgrade quick noodles by tossing in frozen peas/spinach and an egg or tofu for fiber and protein.',
+          'Cut liquid free sugars (sodas, sweet teas, juices) to halve added-sugar intake fast.',
+          'Keep a water bottle within arm’s reach at your desk so hydration isn’t memory-dependent.'
+        ]
+      },
+      {
+        id: 'nutrient_cryptid',
+        minPct: 0,
+        title: 'The Chaos-Fueled Nutrient Cryptid',
+        emoji: '🦝',
+        roast: 'Researchers are fascinated by how you run on caffeine, vibes, and crunchy snacks alone. The upside? Even tiny habit upgrades will feel superhuman within a week.',
+        tips: [
+          'Start small: add 1 whole fruit and 1 extra glass of water per day this week.',
+          'Swap one sugary beverage or energy drink for plain or sparkling water.',
+          'Keep roasted nuts, seeds, or plain yogurt nearby for quick, nutrient-dense snacks.'
+        ]
+      }
+    ];
+
+    const STORAGE_KEY = 'nutripulse_survey_v3';
+    const BASELINE_SAMPLES = [
+      { id: 'AUD-1001', userName: 'Sample Cohort #1', staffId: 'BASE-01', role: 'Student', timestamp: '2026-11-20T09:15:00Z', ageGroup: '25-34', score: 98, maxScore: 120, pct: 82, personaId: 'intentionalist', categoryScores: { 'Dietary Intake & Fiber': 87, 'Hydration & Sugars': 80, 'Stimulants & Protein': 80, 'Fats & Label Literacy': 85 }, q1Top: false, isSample: true },
+      { id: 'AUD-1002', userName: 'Sample Cohort #2', staffId: 'BASE-02', role: 'Student', timestamp: '2026-11-20T11:40:00Z', ageGroup: '18-24', score: 62, maxScore: 120, pct: 52, personaId: 'coffee_strategist', categoryScores: { 'Dietary Intake & Fiber': 47, 'Hydration & Sugars': 50, 'Stimulants & Protein': 57, 'Fats & Label Literacy': 55 }, q1Top: false, isSample: true },
+      { id: 'AUD-1003', userName: 'Sample Cohort #3', staffId: 'BASE-03', role: 'Faculty', timestamp: '2026-11-21T14:22:00Z', ageGroup: '35-44', score: 108, maxScore: 120, pct: 90, personaId: 'overachiever', categoryScores: { 'Dietary Intake & Fiber': 93, 'Hydration & Sugars': 90, 'Stimulants & Protein': 90, 'Fats & Label Literacy': 85 }, q1Top: true, isSample: true },
+      { id: 'AUD-1004', userName: 'Sample Cohort #4', staffId: 'BASE-04', role: 'Student', timestamp: '2026-11-21T19:05:00Z', ageGroup: '18-24', score: 42, maxScore: 120, pct: 35, personaId: 'maggi_philosopher', categoryScores: { 'Dietary Intake & Fiber': 30, 'Hydration & Sugars': 35, 'Stimulants & Protein': 37, 'Fats & Label Literacy': 40 }, q1Top: false, isSample: true },
+      { id: 'AUD-1005', userName: 'Sample Cohort #5', staffId: 'BASE-05', role: 'Professional', timestamp: '2026-11-22T08:50:00Z', ageGroup: '25-34', score: 86, maxScore: 120, pct: 72, personaId: 'intentionalist', categoryScores: { 'Dietary Intake & Fiber': 73, 'Hydration & Sugars': 73, 'Stimulants & Protein': 73, 'Fats & Label Literacy': 65 }, q1Top: false, isSample: true },
+      { id: 'AUD-1006', userName: 'Sample Cohort #6', staffId: 'BASE-06', role: 'Faculty', timestamp: '2026-11-22T16:10:00Z', ageGroup: '45+', score: 104, maxScore: 120, pct: 87, personaId: 'overachiever', categoryScores: { 'Dietary Intake & Fiber': 90, 'Hydration & Sugars': 88, 'Stimulants & Protein': 83, 'Fats & Label Literacy': 85 }, q1Top: true, isSample: true },
+      { id: 'AUD-1007', userName: 'Sample Cohort #7', staffId: 'BASE-07', role: 'Student', timestamp: '2026-11-23T10:30:00Z', ageGroup: '25-34', score: 70, maxScore: 120, pct: 58, personaId: 'coffee_strategist', categoryScores: { 'Dietary Intake & Fiber': 57, 'Hydration & Sugars': 55, 'Stimulants & Protein': 63, 'Fats & Label Literacy': 60 }, q1Top: false, isSample: true },
+      { id: 'AUD-1008', userName: 'Sample Cohort #8', staffId: 'BASE-08', role: 'Student', timestamp: '2026-11-23T21:45:00Z', ageGroup: '18-24', score: 26, maxScore: 120, pct: 22, personaId: 'nutrient_cryptid', categoryScores: { 'Dietary Intake & Fiber': 17, 'Hydration & Sugars': 23, 'Stimulants & Protein': 23, 'Fats & Label Literacy': 25 }, q1Top: false, isSample: true },
+      { id: 'AUD-1009', userName: 'Sample Cohort #9', staffId: 'BASE-09', role: 'Researcher', timestamp: '2026-11-24T09:12:00Z', ageGroup: '35-44', score: 92, maxScore: 120, pct: 77, personaId: 'intentionalist', categoryScores: { 'Dietary Intake & Fiber': 80, 'Hydration & Sugars': 75, 'Stimulants & Protein': 80, 'Fats & Label Literacy': 75 }, q1Top: true, isSample: true },
+      { id: 'AUD-1010', userName: 'Sample Cohort #10', staffId: 'BASE-10', role: 'Professional', timestamp: '2026-11-24T13:55:00Z', ageGroup: '25-34', score: 56, maxScore: 120, pct: 47, personaId: 'coffee_strategist', categoryScores: { 'Dietary Intake & Fiber': 43, 'Hydration & Sugars': 48, 'Stimulants & Protein': 50, 'Fats & Label Literacy': 50 }, q1Top: false, isSample: true },
+      { id: 'AUD-1011', userName: 'Sample Cohort #11', staffId: 'BASE-11', role: 'Student', timestamp: '2026-11-25T11:20:00Z', ageGroup: '25-34', score: 82, maxScore: 120, pct: 68, personaId: 'intentionalist', categoryScores: { 'Dietary Intake & Fiber': 67, 'Hydration & Sugars': 68, 'Stimulants & Protein': 73, 'Fats & Label Literacy': 65 }, q1Top: false, isSample: true },
+      { id: 'AUD-1012', userName: 'Sample Cohort #12', staffId: 'BASE-12', role: 'Student', timestamp: '2026-11-25T17:40:00Z', ageGroup: '18-24', score: 46, maxScore: 120, pct: 38, personaId: 'maggi_philosopher', categoryScores: { 'Dietary Intake & Fiber': 37, 'Hydration & Sugars': 35, 'Stimulants & Protein': 43, 'Fats & Label Literacy': 40 }, q1Top: false, isSample: true }
+    ];
+
+    let state = {
+      activeTab: 'survey',
+      currentUser: null,
+      currentIdx: 0,
+      answers: {},
+      lastResult: null,
+      responses: [],
+      splashTimer: null,
+      charts: { personas: null, categories: null, distribution: null }
+    };
+
+    function loadResponses() {
+      let userEntries = [];
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) userEntries = parsed;
+        }
+      } catch (e) {
+        userEntries = [];
+      }
+      state.responses = [...userEntries, ...BASELINE_SAMPLES];
+    }
+
+    function saveUserEntries() {
+      const userOnly = state.responses.filter(r => !r.isSample);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(userOnly));
+      } catch (e) {}
+    }
+
+    function getPersonaByPct(pct) {
+      return PERSONAS.find(p => pct >= p.minPct) || PERSONAS[PERSONAS.length - 1];
+    }
+
+    function getPersonaById(id) {
+      return PERSONAS.find(p => p.id === id) || PERSONAS[PERSONAS.length - 1];
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2800);
+    }
+
+    function startSplashScreen() {
+      if (state.splashTimer) clearInterval(state.splashTimer);
+      const jokeIdx = Math.floor(Math.random() * SPLASH_JOKES.length);
+      document.getElementById('splash-joke-text').textContent = SPLASH_JOKES[jokeIdx];
+
+      document.getElementById('splash-screen').classList.remove('hidden');
+      document.getElementById('app-header').classList.add('hidden');
+      document.getElementById('app-main').classList.add('hidden');
+      document.getElementById('mobile-bottom-nav').classList.add('hidden');
+
+      const totalMs = 5000;
+      const startTime = Date.now();
+      const bar = document.getElementById('splash-progress-bar');
+      const secEl = document.getElementById('splash-seconds');
+      bar.style.width = '0%';
+      secEl.textContent = '5';
+
+      state.splashTimer = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const pct = Math.min(100, (elapsed / totalMs) * 100);
+        const remaining = Math.max(0, Math.ceil((totalMs - elapsed) / 1000));
+        bar.style.width = pct + '%';
+        secEl.textContent = String(remaining);
+        if (elapsed >= totalMs) finishSplash();
+      }, 80);
+    }
+
+    function finishSplash() {
+      if (state.splashTimer) {
+        clearInterval(state.splashTimer);
+        state.splashTimer = null;
+      }
+      document.getElementById('splash-screen').classList.add('hidden');
+      document.getElementById('app-header').classList.remove('hidden');
+      document.getElementById('app-main').classList.remove('hidden');
+      document.getElementById('mobile-bottom-nav').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      ['survey', 'stats', 'data', 'eng'].forEach(t => {
+        const view = document.getElementById('view-' + t);
+        const btn = document.getElementById('tab-btn-' + t);
+        if (t === tabName) {
+          view.classList.remove('hidden');
+          btn.className = 'tab-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all bg-white text-teal-700 shadow-xs flex items-center gap-1.5';
+        } else {
+          view.classList.add('hidden');
+          btn.className = 'tab-btn px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5';
+        }
+      });
+      document.querySelectorAll('.mobile-tab-btn').forEach(mb => {
+        mb.className = mb.dataset.tab === tabName
+          ? 'mobile-tab-btn flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-teal-700 font-semibold text-[11px]'
+          : 'mobile-tab-btn flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-slate-500 font-medium text-[11px]';
+      });
+      if (tabName === 'stats') renderStats();
+      if (tabName === 'data') renderDataView();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const nameVal = document.getElementById('login-name').value.trim();
+      if (!nameVal) {
+        showToast('Please enter your full name to continue.');
+        return;
+      }
+      state.currentUser = {
+        name: nameVal,
+        staffId: document.getElementById('login-id').value.trim() || 'GUEST',
+        role: document.getElementById('login-role').value,
+        ageGroup: document.getElementById('age-group-select').value,
+        consent: document.getElementById('consent-checkbox').checked
+      };
+      document.getElementById('header-user-badge').textContent =
+        `${state.currentUser.name} • ${state.currentUser.role} (${state.currentUser.staffId})`;
+      startSurvey();
+    }
+
+    function startSurvey() {
+      state.currentIdx = 0;
+      state.answers = {};
+      state.lastResult = null;
+      document.getElementById('login-card').classList.add('hidden');
+      document.getElementById('survey-result-card').classList.add('hidden');
+      document.getElementById('survey-question-card').classList.remove('hidden');
+      renderQuestion();
+    }
+
+    function logoutToLogin() {
+      state.currentUser = null;
+      document.getElementById('header-user-badge').textContent = 'Respondent Portal • Not Signed In';
+      document.getElementById('survey-question-card').classList.add('hidden');
+      document.getElementById('survey-result-card').classList.add('hidden');
+      document.getElementById('login-card').classList.remove('hidden');
+    }
+
+    function renderQuestion() {
+      const q = QUESTIONS[state.currentIdx];
+      const total = QUESTIONS.length;
+      document.getElementById('q-counter').textContent = `Item ${state.currentIdx + 1} / ${total}`;
+      document.getElementById('q-category').textContent = q.category;
+      document.getElementById('q-progress-bar').style.width = `${((state.currentIdx + 1) / total) * 100}%`;
+      document.getElementById('q-title').textContent = q.title;
+      document.getElementById('q-subtitle').textContent = q.subtitle;
+
+      const optionsEl = document.getElementById('q-options');
+      optionsEl.innerHTML = '';
+      const selectedIdx = state.answers[q.id];
+
+      q.options.forEach((opt, idx) => {
+        const isSelected = selectedIdx === idx;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `w-full text-left p-3.5 sm:p-4 rounded-lg border transition-all flex items-center justify-between gap-3 ${
+          isSelected
+            ? 'border-teal-600 bg-teal-50/70 ring-2 ring-teal-600/20 text-slate-900'
+            : 'border-slate-200 bg-white hover:border-teal-400 hover:bg-slate-50 text-slate-800'
+        }`;
+        btn.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-7 h-7 rounded-md text-xs font-bold flex items-center justify-center shrink-0 ${
+              isSelected ? 'bg-teal-700 text-white' : 'bg-slate-100 text-slate-600'
+            }">${String.fromCharCode(65 + idx)}</span>
+            <span class="text-sm font-medium leading-snug">${opt.label}</span>
+          </div>
+        `;
+        btn.addEventListener('click', () => selectOption(idx));
+        optionsEl.appendChild(btn);
+      });
+
+      const feedbackPanel = document.getElementById('q-feedback-panel');
+      if (selectedIdx !== undefined) {
+        const chosen = q.options[selectedIdx];
+        const roastBox = document.getElementById('q-roast-box');
+        const toneStyles = {
+          good: 'bg-teal-50 border-teal-200 text-teal-950',
+          mid: 'bg-sky-50 border-sky-200 text-sky-950',
+          warn: 'bg-amber-50 border-amber-200 text-amber-950',
+          bad: 'bg-rose-50 border-rose-200 text-rose-950'
+        };
+        roastBox.className = `rounded-lg p-4 border flex items-start gap-3 ${toneStyles[chosen.tone] || toneStyles.mid}`;
+        document.getElementById('q-roast-emoji').textContent = chosen.emoji;
+        document.getElementById('q-roast-text').textContent = chosen.roast;
+        document.getElementById('q-science-text').textContent = q.science;
+        document.getElementById('q-science-source').textContent = q.sourceName;
+        document.getElementById('q-science-link').href = q.sourceUrl;
+        feedbackPanel.classList.remove('hidden');
+      } else {
+        feedbackPanel.classList.add('hidden');
+      }
+
+      document.getElementById('prev-q-btn').disabled = state.currentIdx === 0;
+      const nextBtn = document.getElementById('next-q-btn');
+      nextBtn.disabled = selectedIdx === undefined;
+      document.getElementById('next-q-label').textContent =
+        state.currentIdx === total - 1 ? 'Generate Report' : 'Next Item';
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function selectOption(optIdx) {
+      const q = QUESTIONS[state.currentIdx];
+      state.answers[q.id] = optIdx;
+      renderQuestion();
+    }
+
+    function finishSurvey() {
+      let totalPoints = 0;
+      const maxScore = QUESTIONS.length * 10;
+      const catTotals = {};
+      const catCounts = {};
+
+      QUESTIONS.forEach(q => {
+        const idx = state.answers[q.id] ?? 0;
+        const pts = q.options[idx].points;
+        totalPoints += pts;
+        catTotals[q.category] = (catTotals[q.category] || 0) + pts;
+        catCounts[q.category] = (catCounts[q.category] || 0) + 10;
+      });
+
+      const pct = Math.round((totalPoints / maxScore) * 100);
+      const categoryScores = {};
+      Object.keys(catTotals).forEach(cat => {
+        categoryScores[cat] = Math.round((catTotals[cat] / catCounts[cat]) * 100);
+      });
+
+      const persona = getPersonaByPct(pct);
+      const user = state.currentUser || { name: 'Guest', staffId: 'GUEST', role: 'Guest', ageGroup: '18-24', consent: true };
+      const auditId = 'AUD-' + String(Math.floor(1000 + Math.random() * 9000));
+
+      const entry = {
+        id: auditId,
+        userName: user.name,
+        staffId: user.staffId,
+        role: user.role,
+        timestamp: new Date().toISOString(),
+        ageGroup: user.ageGroup,
+        score: totalPoints,
+        maxScore,
+        pct,
+        personaId: persona.id,
+        categoryScores,
+        q1Top: (state.answers['q1'] === 0),
+        isSample: false
+      };
+
+      if (user.consent) {
+        state.responses.unshift(entry);
+        saveUserEntries();
+      }
+
+      state.lastResult = { entry, persona, saved: user.consent };
+      renderResult();
+    }
+
+    function renderResult() {
+      const { entry, persona, saved } = state.lastResult;
+      document.getElementById('survey-question-card').classList.add('hidden');
+      document.getElementById('survey-result-card').classList.remove('hidden');
+
+      document.getElementById('result-audit-id').textContent = entry.id;
+      document.getElementById('result-user-greeting').textContent = `${entry.userName} (${entry.role})`;
+      document.getElementById('result-persona-title').textContent = persona.title;
+      document.getElementById('result-persona-roast').textContent = persona.roast;
+      document.getElementById('result-persona-emoji').textContent = persona.emoji;
+      document.getElementById('result-score-pct').textContent = `${entry.pct}%`;
+
+      const allScores = state.responses.map(r => r.pct);
+      const lowerCount = allScores.filter(s => s < entry.pct).length;
+      const beatPct = allScores.length > 0 ? Math.round((lowerCount / allScores.length) * 100) : 50;
+      document.getElementById('result-benchmark-text').textContent =
+        `Cohort Benchmark: Higher than ${beatPct}% of ${state.responses.length} stored respondents.`;
+
+      const catsEl = document.getElementById('result-categories');
+      catsEl.innerHTML = '';
+      Object.entries(entry.categoryScores).forEach(([cat, val]) => {
+        const barColor = val >= 75 ? 'bg-teal-600' : val >= 50 ? 'bg-amber-500' : 'bg-rose-500';
+        const div = document.createElement('div');
+        div.className = 'p-3.5 rounded-lg border border-slate-200 bg-white space-y-2';
+        div.innerHTML = `
+          <div class="flex items-center justify-between text-xs font-semibold">
+            <span class="text-slate-700">${cat}</span>
+            <span class="text-slate-900">${val}%</span>
+          </div>
+          <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full ${barColor} rounded-full" style="width: ${val}%"></div>
+          </div>
+        `;
+        catsEl.appendChild(div);
+      });
+
+      const tipsEl = document.getElementById('result-tips');
+      tipsEl.innerHTML = '';
+      persona.tips.forEach(tip => {
+        const li = document.createElement('li');
+        li.className = 'flex items-start gap-2';
+        li.innerHTML = `<span class="text-teal-700 font-bold mt-0.5">•</span><span>${tip}</span>`;
+        tipsEl.appendChild(li);
+      });
+
+      const badge = document.getElementById('storage-status-badge');
+      badge.innerHTML = saved
+        ? '<i data-lucide="database" class="w-3.5 h-3.5"></i><span>Persisted to Audit Trail</span>'
+        : '<i data-lucide="eye-off" class="w-3.5 h-3.5"></i><span>Consent unchecked — not stored</span>';
+
+      if (window.confetti) {
+        try { confetti({ particleCount: 55, spread: 55, origin: { y: 0.7 } }); } catch (e) {}
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderStats() {
+      const total = state.responses.length;
+      const userCount = state.responses.filter(r => !r.isSample).length;
+      const avgPct = total > 0 ? Math.round(state.responses.reduce((s, r) => s + r.pct, 0) / total) : 0;
+      const produceCount = state.responses.filter(r => r.q1Top).length;
+      const producePct = total > 0 ? Math.round((produceCount / total) * 100) : 0;
+
+      const personaCounts = {};
+      PERSONAS.forEach(p => { personaCounts[p.id] = 0; });
+      state.responses.forEach(r => { personaCounts[r.personaId] = (personaCounts[r.personaId] || 0) + 1; });
+
+      let topPersona = PERSONAS[0];
+      let topCount = -1;
+      PERSONAS.forEach(p => {
+        if ((personaCounts[p.id] || 0) > topCount) {
+          topCount = personaCounts[p.id] || 0;
+          topPersona = p;
+        }
+      });
+
+      document.getElementById('stats-sample-note').textContent = `${total} (${userCount} logged-in + ${total - userCount} baseline)`;
+      document.getElementById('kpi-total').textContent = total;
+      document.getElementById('kpi-user-count').textContent = `${userCount} logged-in`;
+      document.getElementById('kpi-avg-score').textContent = `${avgPct}%`;
+      document.getElementById('kpi-top-persona').textContent = `${topPersona.emoji} ${topPersona.title}`;
+      document.getElementById('kpi-top-persona-pct').textContent = total > 0 ? `${Math.round((topCount / total) * 100)}% of cohort` : '0%';
+      document.getElementById('kpi-produce-pct').textContent = `${producePct}%`;
+
+      if (!window.Chart) return;
+      Object.values(state.charts).forEach(ch => { if (ch) ch.destroy(); });
+
+      state.charts.personas = new Chart(document.getElementById('chart-personas').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: PERSONAS.map(p => p.title),
+          datasets: [{
+            data: PERSONAS.map(p => personaCounts[p.id] || 0),
+            backgroundColor: ['#0f766e', '#0284c7', '#d97706', '#ea580c', '#e11d48'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+        }
+      });
+
+      const categories = ['Dietary Intake & Fiber', 'Hydration & Sugars', 'Stimulants & Protein', 'Fats & Label Literacy'];
+      const catAvgs = categories.map(cat => {
+        if (total === 0) return 0;
+        const sum = state.responses.reduce((acc, r) => acc + (r.categoryScores?.[cat] ?? 0), 0);
+        return Math.round(sum / total);
+      });
+
+      state.charts.categories = new Chart(document.getElementById('chart-categories').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: categories,
+          datasets: [{ label: 'Mean Mastery (%)', data: catAvgs, backgroundColor: '#0f766e', borderRadius: 6 }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { x: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      const brackets = ['0–24%', '25–44%', '45–64%', '65–84%', '85–100%'];
+      const bracketCounts = [
+        state.responses.filter(r => r.pct < 25).length,
+        state.responses.filter(r => r.pct >= 25 && r.pct < 45).length,
+        state.responses.filter(r => r.pct >= 45 && r.pct < 65).length,
+        state.responses.filter(r => r.pct >= 65 && r.pct < 85).length,
+        state.responses.filter(r => r.pct >= 85).length
+      ];
+
+      state.charts.distribution = new Chart(document.getElementById('chart-distribution').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: brackets,
+          datasets: [{ label: 'Respondents', data: bracketCounts, backgroundColor: ['#e11d48', '#ea580c', '#d97706', '#0284c7', '#0f766e'], borderRadius: 6 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function populatePersonaFilter() {
+      const sel = document.getElementById('filter-persona-select');
+      if (sel.options.length > 1) return;
+      PERSONAS.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.emoji} ${p.title}`;
+        sel.appendChild(opt);
+      });
+    }
+
+    function renderDataView() {
+      populatePersonaFilter();
+      const personaFilter = document.getElementById('filter-persona-select').value;
+      const sourceFilter = document.getElementById('filter-source-select').value;
+
+      const filtered = state.responses.filter(r => {
+        if (personaFilter !== 'all' && r.personaId !== personaFilter) return false;
+        if (sourceFilter === 'user' && r.isSample) return false;
+        if (sourceFilter === 'sample' && !r.isSample) return false;
+        return true;
+      });
+
+      const tbody = document.getElementById('responses-table-body');
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-500">No matching records found.</td></tr>`;
+      } else {
+        filtered.forEach(r => {
+          const p = getPersonaById(r.personaId);
+          const d = new Date(r.timestamp);
+          const dateStr = isNaN(d.getTime()) ? r.timestamp : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50/80';
+          tr.innerHTML = `
+            <td class="py-2.5 px-4 whitespace-nowrap">
+              <div class="font-mono text-xs font-bold text-slate-700">${r.id}</div>
+              <div class="text-[11px] text-slate-500">${dateStr}</div>
+            </td>
+            <td class="py-2.5 px-4">
+              <div class="font-semibold text-slate-800">${r.userName || 'Guest'}</div>
+              <div class="text-[11px] text-slate-500">${r.role || 'Guest'} • ${r.staffId || 'N/A'}</div>
+            </td>
+            <td class="py-2.5 px-4 text-slate-700">${r.ageGroup}</td>
+            <td class="py-2.5 px-4 font-bold text-slate-900">${r.pct}%</td>
+            <td class="py-2.5 px-4 text-slate-800 font-medium">${p.emoji} ${p.title}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      const bankEl = document.getElementById('question-bank-list');
+      if (bankEl.children.length === 0) {
+        QUESTIONS.forEach((q, idx) => {
+          const card = document.createElement('div');
+          card.className = 'rounded-lg border border-slate-200 p-4 space-y-3 bg-slate-50/50';
+          const optsHtml = q.options.map((o, oi) => `
+            <div class="text-xs bg-white border border-slate-200 rounded-md p-2.5 space-y-1">
+              <div class="font-semibold text-slate-800">${String.fromCharCode(65 + oi)}. ${o.label} <span class="text-slate-400">(${o.points} pts)</span></div>
+              <div class="text-slate-600">${o.emoji} ${o.roast}</div>
+            </div>
+          `).join('');
+          card.innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs font-bold text-teal-700 uppercase tracking-wider">Item ${idx + 1} • ${q.category}</span>
+              <a href="${q.sourceUrl}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-teal-700 underline">${q.sourceName} ↗</a>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900">${q.title}</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${optsHtml}</div>
+            <div class="text-xs text-slate-700 bg-teal-50/70 border border-teal-200 rounded-md p-2.5">
+              <strong class="text-teal-900">Evidence-Based Standard:</strong> ${q.science}
+            </div>
+          `;
+          bankEl.appendChild(card);
+        });
+      }
+    }
+
+    function downloadFile(content, filename, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportCSV() {
+      const headers = ['auditId', 'userName', 'staffId', 'role', 'timestamp', 'origin', 'ageGroup', 'score', 'maxScore', 'pct', 'persona'];
+      const rows = state.responses.map(r => [
+        r.id,
+        `"${(r.userName || 'Guest').replace(/"/g, '""')}"`,
+        `"${(r.staffId || 'N/A').replace(/"/g, '""')}"`,
+        `"${(r.role || 'Guest').replace(/"/g, '""')}"`,
+        r.timestamp,
+        r.isSample ? 'Baseline' : 'LoggedIn',
+        r.ageGroup,
+        r.score,
+        r.maxScore,
+        r.pct,
+        `"${getPersonaById(r.personaId).title.replace(/"/g, '""')}"`
+      ].join(','));
+      downloadFile([headers.join(','), ...rows].join('\n'), 'nutripulse_audit_export.csv', 'text/csv;charset=utf-8;');
+      showToast('Exported CSV audit dataset.');
+    }
+
+    function exportJSON() {
+      downloadFile(JSON.stringify(state.responses, null, 2), 'nutripulse_audit_export.json', 'application/json');
+      showToast('Exported JSON audit dataset.');
+    }
+
+    function copyResultText() {
+      if (!state.lastResult) return;
+      const { entry, persona } = state.lastResult;
+      const text = `${persona.emoji} NutriPulse Report [${entry.id}] — ${entry.userName}\nClassification: ${persona.title} (${entry.pct}%)\n"${persona.roast}"`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast('Copied summary report!')).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Copied summary report!');
+      } catch (e) {
+        showToast('Copy failed.');
+      }
+      document.body.removeChild(ta);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadResponses();
+      startSplashScreen();
+
+      document.getElementById('skip-splash-btn').addEventListener('click', finishSplash);
+      document.getElementById('replay-splash-btn').addEventListener('click', startSplashScreen);
+      document.getElementById('login-form').addEventListener('submit', handleLoginSubmit);
+      document.getElementById('logout-btn').addEventListener('click', logoutToLogin);
+
+      document.querySelectorAll('.tab-btn, .mobile-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      document.getElementById('prev-q-btn').addEventListener('click', () => {
+        if (state.currentIdx > 0) {
+          state.currentIdx--;
+          renderQuestion();
+        }
+      });
+
+      document.getElementById('next-q-btn').addEventListener('click', () => {
+        if (state.currentIdx < QUESTIONS.length - 1) {
+          state.currentIdx++;
+          renderQuestion();
+        } else {
+          finishSurvey();
+        }
+      });
+
+      document.getElementById('retake-survey-btn').addEventListener('click', logoutToLogin);
+      document.getElementById('copy-result-btn').addEventListener('click', copyResultText);
+      document.getElementById('go-to-stats-from-result').addEventListener('click', () => switchTab('stats'));
+      document.getElementById('stats-take-survey-btn').addEventListener('click', () => {
+        switchTab('survey');
+        if (state.currentUser) startSurvey();
+        else logoutToLogin();
+      });
+
+      document.getElementById('filter-persona-select').addEventListener('change', renderDataView);
+      document.getElementById('filter-source-select').addEventListener('change', renderDataView);
+      document.getElementById('export-csv-btn').addEventListener('click', exportCSV);
+      document.getElementById('export-json-btn').addEventListener('click', exportJSON);
+
+      document.getElementById('clear-user-data-btn').addEventListener('click', () => {
+        document.getElementById('confirm-modal').classList.remove('hidden');
+      });
+      document.getElementById('modal-cancel-btn').addEventListener('click', () => {
+        document.getElementById('confirm-modal').classList.add('hidden');
+      });
+      document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+        state.responses = [...BASELINE_SAMPLES];
+        saveUserEntries();
+        document.getElementById('confirm-modal').classList.add('hidden');
+        renderDataView();
+        showToast('Cleared local respondent records.');
+      });
+
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
